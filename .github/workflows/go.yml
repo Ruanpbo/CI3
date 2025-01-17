@@ -2,24 +2,23 @@ name: Go
 
 on:
   push:
-    branches: [ '*' ]
+    branches: [ "*" ]
   pull_request:
-    branches: [ '*' ]
+    branches: [ "main" ]
 
 jobs:
-
-  test:
+  test:   
     runs-on: ${{ matrix.os }}
     env:
-      HOST: localhost
-      PORT: 5432
-      USER: root
-      PASSWORD: root
-      DBNAME: root
+      HOST: ${{ secrets.HOST }}
+      PORT: ${{ secrets.PORT }}
+      USER: ${{ secrets.USER }}
+      PASSWORD: ${{ secrets.PASSWORD }}
+      NAME: ${{ secrets.NAME }}
     strategy:
       matrix:
-        go_version: ['1.18', '1.17', '>=1.18']
-        os: ['ubuntu-latest', 'ubuntu-18.04']
+        os: ['ubuntu-latest', 'ubuntu-24.04']
+        go_version: ['1.19', '1.20', '1.21.x']
     steps:
     - uses: actions/checkout@v3
 
@@ -28,11 +27,11 @@ jobs:
       with:
         go-version: ${{ matrix.go_version }}
       
-    - name: Build-DB
-      run: docker-compose build
-      
+    - name: build
+      run: sudo apt-get install docker-compose -y
+
     - name: Create-DB
-      run: docker-compose up -d
+      run: docker-compose up -d postgres
 
     - name: Test
       run: go test -v main_test.go 
@@ -45,15 +44,12 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build
       run: go build -v main.go
-      
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.0
-      with:
-    # Artifact name
-        name: programa
-    # A file, directory or wildcard pattern that describes what to upload
-        path: main
 
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v4.6.0
+      with:
+            name: programa
+            path: main
 
   docker:
     needs: build
